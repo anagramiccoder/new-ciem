@@ -8,10 +8,20 @@ from datetime import datetime
 import dash_bootstrap_components as dbc
 from app import app
 layout=html.Div([
-    
-        cm.navigation,
-        cm.top,
-    html.Div([
-        dbc.Container([dbc.Label("Search Name"),dbc.Input(id='alum-search',type='text')])
-    ],className='flex container')
-])
+        dbc.Card([
+            dbc.CardBody(
+                [
+                html.Div([
+                    dbc.CardHeader(html.H1("LOGIN")),
+                        dbc.Input(id='uname', type='text', className='input', placeholder='Username'),
+                        dbc.Input(type='password', id='pword', className='input', placeholder='Password'),
+                        html.H4(id='errormessage', className='error'),
+                        dbc.Button('Log In', id='submit-val', className='loginbutton', n_clicks=0),
+
+                ],className='half left'),
+                html.Div([
+                ],className='half')
+                ],
+            ),
+        ], class_name='flex small')
+    ],className='FullScreen')

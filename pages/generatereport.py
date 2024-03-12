@@ -122,7 +122,8 @@ layout=html.Div([
         Output('com-tab','children'),
         Output('year-tab','children'),
         Output('batch-tab','children'),
-        Output('ws','children')
+        Output('ws','children'),
+        Output('pref-table','children')
     ],
     
     Input('url','pathname'),
@@ -278,16 +279,77 @@ def generate(pathname):
             WHERE (upciem_member_delete is NULL or upciem_member_delete=False) AND 
 			active_status='Active'
         """#will only include active members (aka reaffiliated)
-        cols=['Full Name','first','sec','third','frth','ffth','sth']
+        cols=['ID','Full Name','first','sec','third','frth','ffth','sth']
         com_df=db.querydatafromdatabase(sql,[],cols)
-
+        committee_members={'Academic Affairs Committee':[],'External Affairs Committee':[],'Finance Committee':[],'Internal Affairs Committee':[],'Membership and Recruitment Committee':[],'Publications and Records Committee':[]}
+        committee_members_id={'Academic Affairs Committee':[],'External Affairs Committee':[],'Finance Committee':[],'Internal Affairs Committee':[],'Membership and Recruitment Committee':[],'Publications and Records Committee':[]}
+        
         #distribution type
         com_limit=com_df.shape[0]//6+bool(com_df.shape[0]%6>0) #will do a +1 when it cannot evenly distribute all members to have a max of com_limit+1 per pref
 
-        
+        #process: toss left to right until fifth preference then toss to whatever is not full yet
+        com_df_sec=[]
         #add those who hase prefernces using first preference first
-        
+        for index,mem in com_df.iterrows():
+            if (mem["first"] in committee_members) and len(committee_members[mem["first"]])<com_limit:
+                committee_members[mem["first"]]+=[mem["Full Name"]]
+                committee_members_id[mem["first"]]+=[mem["ID"]]
+            else:
+                com_df_sec.append(mem)
+        #now on to the second preference
+        com_df=[]
+        for mem in com_df_sec:
+            if (mem["sec"] in committee_members) and len(committee_members[mem["sec"]])<com_limit:
+                committee_members[mem["sec"]]+=[mem["Full Name"]]
+                committee_members_id[mem["sec"]]+=[mem["ID"]]
+            else:
+                com_df.append(mem)
 
+        #third
+        com_df_sec=[]
+        for mem in com_df:
+            if (mem["third"] in committee_members) and len(committee_members[mem["third"]])<com_limit:
+                committee_members[mem["third"]]+=[mem["Full Name"]]
+                committee_members_id[mem["third"]]+=[mem["ID"]]
+            else:
+                com_df_sec.append(mem)
+        #fourth
+        com_df=[]
+        for mem in com_df_sec:
+            if (mem["frth"] in committee_members) and len(committee_members[mem["frth"]])<com_limit:
+                committee_members[mem["frth"]]+=[mem["Full Name"]]
+                committee_members_id[mem["frth"]]+=[mem["ID"]]
+            else:
+                com_df.append(mem)
+
+        #fifth
+        com_df_sec=[]
+        for mem in com_df:
+            if (mem["ffth"] in committee_members) and len(committee_members[mem["ffth"]])<com_limit:
+                committee_members[mem["ffth"]]+=[mem["Full Name"]]
+                committee_members_id[mem["ffth"]]+=[mem["ID"]]
+            else:
+                com_df_sec.append(mem)
+        #sixth
+        com_df=[]
+        for mem in com_df_sec:
+            if (mem["sth"] in committee_members) and len(committee_members[mem["sth"]])<com_limit:
+                committee_members[mem["sth"]]+=[mem["Full Name"]]
+                committee_members_id[mem["sth"]]+=[mem["ID"]]
+            else:
+                com_df.append(mem)
+        #in case there are still members left (in this case that would be in com_df), we just fill in all those committee+ to balance out for dataframing
+        for mem in com_df:
+            for com in committee_members.keys():
+                if len(committee_members[com])<com_limit:
+                        committee_members[com]+=[mem["Full Name"]]
+                        break
+        for com in committee_members.keys():
+            while len(committee_members[com])<com_limit:
+                    committee_members[com]+=[""]
+        com_mem=pd.DataFrame(committee_members)
+        print(com_mem)
+        ptable=dbc.Container(dbc.Table.from_dataframe(com_mem,striped=True, bordered=True,hover=True, size='xl')    )
         ##This is for the 14 Stripes,using the headship from active earlier
         ws_children=[]
         fteen_df=hs_active_mem.iloc[:]# just creating a copy just in case
@@ -299,5 +361,5 @@ def generate(pathname):
         ws_children+=[html.H5("White Stripe Scores"),dbc.Container([dbc.Table.from_dataframe(fteen_df.drop(columns=['gwa','Performance Grade']),striped=True, bordered=True,hover=True, size='sm')],class_name='sm-table-wrapper')]
         fourteen=fteen_df.iloc[:14]#will only get first 14 regardless of ties, will fix if needed
         ws_children+=[html.H5("Top 14 White Stripe Members"),dbc.Container(dbc.Table.from_dataframe(fourteen.drop(columns=['gwa','Performance Grade','WS Scores','Committee Name']),striped=True, bordered=True,hover=True, size='xl'),class_name='ws-table-wrapper')]
-        return new_reaff_children,act_inact_children,dash.no_update,act_table,inact_table,new_table,reaff_table,committee_val[0],committee_val[1],committee_val[2],committee_val[3],committee_val[4],committee_val[5],committee_val[6],af_table,ef_table,f_table,if_table,mr_table,pr_table,no_table,all_table,com_tabs,year_tabs,app_tabs,ws_children
+        return new_reaff_children,act_inact_children,dash.no_update,act_table,inact_table,new_table,reaff_table,committee_val[0],committee_val[1],committee_val[2],committee_val[3],committee_val[4],committee_val[5],committee_val[6],af_table,ef_table,f_table,if_table,mr_table,pr_table,no_table,all_table,com_tabs,year_tabs,app_tabs,ws_children,ptable
     raise PreventUpdate

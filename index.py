@@ -11,6 +11,8 @@ from app import app
 from apps import commonmodule as cm
 from pages import home,alumni,changepassword, generatereport,managers,members,reaffiliate,updatealum,updatemember,login,updatemem
 app.layout = html.Div([dcc.Location(id='url',refresh=False),
+                       dcc.Store(id="auth",data={'isAuthenticated':True},storage_type="session"),
+                       dcc.Store(id="updater",data=0,storage_type="session"),
     html.Div(id='page-content')])
 
 @app.callback(
@@ -22,9 +24,11 @@ app.layout = html.Div([dcc.Location(id='url',refresh=False),
     [
         Input('url', 'pathname'),
     ],
+    [
+        State('auth','data')
+    ]
 )
-def displaypage (pathname):
-    data={'isAuthenticated':True}
+def displaypage (pathname,data):
     print('current data in display->', data)
     ctx = dash.callback_context
     if ctx.triggered:
@@ -73,5 +77,10 @@ def displaypage (pathname):
                 PreventUpdate
     else:
         raise PreventUpdate
+@app.callback(
+    Output
+)
+def update_auth():
+    raise PreventUpdate
 if __name__ == '__main__': 
     app.run_server(debug=True)
